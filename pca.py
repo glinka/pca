@@ -1,66 +1,37 @@
 import numpy as np
-import matplotlib.pyplot as plt
+import scipy.sparse.linalg as spla
 
-def pca(data, ncomp=None):
-    # expect individual data vectors to
-    # be input as rows in data, so
-    # data.shape = (npoints, nvars)
-    # ncomp represents the number of
-    # components to store
-    X = np.array(data)
-    npoints = X.shape[0]
-    nvars = X.shape[1]
+def pca(data, k, corr=False):
+    """Calculates the top 'k' principal components of the data array and their corresponding variances. This is accomplished via the explicit calculation of the covariance or correlation matrix, depending on which version is desired, and a subsequent partial eigendecomposition.
 
-    # center the data at the origin
-    # (trust the magic of broadcasting)
-    X = X - np.average(X, 0)
+    Args:
+        data (array): a shape ("number of data points", "dimension of data") or (n, m) array containing the data to be operated on
+        k (int): the number of principal componenets to be found
+        corr (bool): determines whether the correlation matrix will be used instead of the more traditional covariance matrix. Useful when dealing with disparate scales in data measurements as the correlation between to random variables, given by :math:`corr(x,y) = \frac{cov(x,y)}{\sigma_x \sigma_y}`, includes a natural rescaling of units
 
-    # an unset ncomp will default to 
-    # returning the full transformation
-    if ncomp == None:
-        ncomp = nvars
+    Returns:
+        pcs (array): shape (m, k) array in which each column is a principal component of 'data'. Thus the projection onto the these coordinates would be given by the (k, n) array np.dot(pcs.T, dat.T)
+        variances (array): shape(k,) array containing the 'k' variances corresponding to the 'k' principal components in 'pcs'
 
-    u, s, v = np.linalg.svd(X)
-    # note the "-s" to reverse sorting order
-    sorted_indices = np.argsort(-s)
-    princ_vars = s[sorted_indices[:ncomp]]
-    princ_comps = v[sorted_indices[:ncomp], :]
-    # need to change shape to take transpose
-    return princ_vars, np.transpose(princ_comps)
-        
-def test_pca():
-    from mpl_toolkits.mplot3d import Axes3D
-
-    # define a planar equation
-    z = lambda x, y: 3*x - y + 4
-    npoints = 100
-    stdev = 0.5
-    noise = stdev*np.random.normal(size=npoints)
-    xvals = np.random.uniform(low=-1, high=1, size=npoints)
-    yvals = np.random.uniform(low=-4, high=4, size=npoints)
-    zvals = z(xvals, yvals) + noise
-
-    data = np.transpose(np.array([xvals, yvals, zvals]))
-    pvar, pcomp = pca(data)
-
-    # plot projections along various components
-    ncomp = pvar.shape[0]
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    cs = ['b', 'r', 'g']
-    data_avg = np.average(data, 0)
-    centered_data = data - data_avg
-    # do not bother plotting "full" projection, which would give back the original data
-    for i in range(2):
-        # need to add back the averages
-        proj = np.dot(np.dot(centered_data, pcomp[:,:i+1]), np.transpose(pcomp[:,:i+1])) + data_avg
-        ax.scatter(proj[:,0], proj[:,1], proj[:,2], c=cs[i], lw=0)
-        print str(i+1) + 'd projection norm: ', np.linalg.norm(data - proj)
-    # plot original data
-    ax.scatter(data[:,0], data[:,1], data[:,2], c='c', lw=0)
-    plt.show(fig)
-    
-    
-
-if __name__ == '__main__':
-    test_pca()
+    >>> from pca_test import test_pca
+    >>> test_pca()
+    """
+    n = data.shape[0]
+    m = data.shape[1]
+    # center the data/subtract means
+    data = data - np.average(data, 0)
+    # calc experimental covariance matrix
+    C = np.dot(data.T, data)/(n-1)
+    if corr:
+        # use correlation matrix
+        # extract experimental std. devs.
+        variances = np.sqrt(np.diag(C))
+        variances.shape = (m, 1)
+        # rescale to obtain correlation matrix
+        C = C/np.dot(variances, variances.T)
+    # calculate eigendecomp with arnoldi/lanczos if k < m, else use eigh for full decomposition
+    if k < m:
+        variances, pcs  = spla.eigs(C, k=k)
+    else:
+        variances, pcs = np.linalg.eigh(C)
+    return pcs, variances
