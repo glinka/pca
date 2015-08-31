@@ -1,3 +1,9 @@
+"""A most basic implementation of PCA, allowing for analysis of either the covariance or correlation matrix.
+
+.. moduleauthor:: Alexander Holiday <holiday@alexanderholiday.com>
+
+"""
+
 import numpy as np
 import scipy.sparse.linalg as spla
 
@@ -7,11 +13,11 @@ def pca(data, k, corr=False):
     Args:
         data (array): a shape ("number of data points", "dimension of data") or (n, m) array containing the data to be operated on
         k (int): the number of principal componenets to be found
-        corr (bool): determines whether the correlation matrix will be used instead of the more traditional covariance matrix. Useful when dealing with disparate scales in data measurements as the correlation between to random variables, given by :math:`corr(x,y) = \frac{cov(x,y)}{\sigma_x \sigma_y}`, includes a natural rescaling of units
+        corr (bool): determines whether the correlation matrix will be used instead of the more traditional covariance matrix. Useful when dealing with disparate scales in data measurements as the correlation between to random variables, given by :math:`corr(x,y) = \\frac{cov(x,y)}{\sigma_x \sigma_y}`, includes a natural rescaling of units
 
     Returns:
-        pcs (array): shape (m, k) array in which each column is a principal component of 'data'. Thus the projection onto the these coordinates would be given by the (k, n) array np.dot(pcs.T, dat.T)
-        variances (array): shape(k,) array containing the 'k' variances corresponding to the 'k' principal components in 'pcs'
+        pcs (array): shape (m, k) array in which column 'j' corresponds to the 'j'th principal component and corresponding variance. Thus the projection onto the these coordinates would be given by the (k, n) array np.dot(pcs.T, dat.T).
+        variances (array): shape(k,) array containing the 'k' variances corresponding to the 'k' principal components in 'pcs', sorted from largest to smallest
 
     >>> from pca_test import test_pca
     >>> test_pca()
@@ -31,7 +37,8 @@ def pca(data, k, corr=False):
         C = C/np.dot(variances, variances.T)
     # calculate eigendecomp with arnoldi/lanczos if k < m, else use eigh for full decomposition
     if k < m:
-        variances, pcs  = spla.eigs(C, k=k)
+        variances, pcs  = spla.eigsh(C, k=k)
     else:
         variances, pcs = np.linalg.eigh(C)
-    return pcs, variances
+    index_order = np.argsort(variances)[::-1]
+    return pcs[:,index_order[:k]], variances[index_order[:k]]
