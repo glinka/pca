@@ -1,3 +1,9 @@
+"""Shows the usefulness of PCA on a noisy planar dataset
+
+.. moduleauthor:: Alexander Holiday <holiday@alexanderholiday.com>
+
+"""
+
 import pca
 import numpy as np
 import matplotlib.pyplot as plt
@@ -34,7 +40,7 @@ def test_pca():
     ax.set_ylabel('y')
     ax.set_zlabel('z')
     # hide labels and grid, too squashed/noisy
-    ax.grid(False)
+    # ax.grid(False)
     ax.w_xaxis.set_pane_color((1.0, 1.0, 1.0, 1.0))
     ax.w_yaxis.set_pane_color((1.0, 1.0, 1.0, 1.0))
     ax.w_zaxis.set_pane_color((1.0, 1.0, 1.0, 1.0))
@@ -51,11 +57,18 @@ def test_pca():
     # proj = proj[:,sorted_indices]
 
     # fake pca result, true in the limit of infinite data
-    xgrid, ygrid = np.meshgrid(np.linspace(2,6,10), np.linspace(2,10,10))
-    ax.plot_wireframe(xgrid, ygrid, z(xgrid, ygrid), color='#12227A', alpha=0.5)
-    grid_coord = (2,2)
-    for i in range(2):
-        ax.plot((xgrid[grid_coord], xgrid[grid_coord] + pcomp[0,i]), (ygrid[grid_coord], ygrid[grid_coord] + pcomp[1,i]), (z(xgrid[grid_coord], ygrid[grid_coord]), z(xgrid[grid_coord], ygrid[grid_coord]) + pcomp[2,i]), c='k')
+    # xgrid, ygrid = np.meshgrid(np.linspace(2,6,10), np.linspace(2,10,10))
+    # ax.plot_wireframe(xgrid, ygrid, z(xgrid, ygrid), color='#12227A', alpha=0.5)
+    # grid_coord = (2,2)
+    # for i in range(2):
+    #     ax.plot((xgrid[grid_coord], xgrid[grid_coord] + pcomp[0,i]), (ygrid[grid_coord], ygrid[grid_coord] + pcomp[1,i]), (z(xgrid[grid_coord], ygrid[grid_coord]), z(xgrid[grid_coord], ygrid[grid_coord]) + pcomp[2,i]), c='k')
+
+    for ii in xrange(0,360,1):
+        ax.view_init(elev=20.0, azim=ii)
+        if ii >= 180:
+            xgrid, ygrid = np.meshgrid(np.linspace(2,6,10), np.linspace(2,10,10))
+            ax.plot_wireframe(xgrid, ygrid, z(xgrid, ygrid), color='#12227A', alpha=0.5)
+        plt.savefig('/home/alexander/workspace/sloppy_models/rawlings_model/figs/pca/pca' + str(ii) + '.png')
 
 
     # # handmade wireframe
@@ -80,7 +93,6 @@ def test_pca():
     # ax.set_ylabel('Second principal component')
     # # ax.set_title('Projection of dataset along first two principal components')
 
-    plt.show()
     # for i in range(2):
     #     # need to add back the averages
     #     proj = np.dot(np.dot(centered_data, pcomp[:,:i+1]), np.transpose(pcomp[:,:i+1])) + data_avg
@@ -88,7 +100,7 @@ def test_pca():
     #     print str(i+1) + 'd projection norm: ', np.linalg.norm(data - proj)
     # # plot original data
     # ax.scatter(data[:,0], data[:,1], data[:,2], c='g', lw=0)
-    plt.show(fig)
+    # plt.show(fig)
 
 if __name__ == '__main__':
     test_pca()
